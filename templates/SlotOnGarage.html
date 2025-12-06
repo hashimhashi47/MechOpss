@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Garage Slot Manager</title>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex">
+
+  {{ template "sidebar" }}
+
+  <main class="flex-1 p-8 lg:p-10">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Garage Slot Management</h1>
+        <p class="text-gray-600">Manage and monitor all service slots</p>
+      </div>
+
+      <!-- SLOT GRID -->
+      <div id="slotGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+    </div>
+
+    <!-- SLOT EDIT FORM -->
+    <div id="slotForm" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4" style="z-index: 1000;">
+      <form class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-900">Update Slot</h2>
+          <button type="button" onclick="toggleForm()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <input type="hidden" id="slotId">
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Car Model</label>
+            <input id="carModel" placeholder="Enter car model" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Complaint</label>
+            <input id="complaint" placeholder="Describe the issue" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Scheduled Time</label>
+            <input id="time" type="datetime-local" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Assigned Staff</label>
+            <input id="staff" placeholder="Staff member name" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+            <select id="status" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="empty">Empty</option>
+              <option value="booked">Booked</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <button type="button" onclick="toggleForm()"
+            class="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg">Cancel</button>
+          <button type="button" onclick="saveSlot()"
+            class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg">Save Changes</button>
+        </div>
+      </form>
+    </div>
+
+  </main>
+
+  <script>
+    let slots = [];
+
+    // ---------------------------
+    // LOAD SLOTS FROM BACKEND
+    // ---------------------------
+    async function loadSlots() {
+      const res = await fetch("/Admin/GetSlots");
+      const data = await res.json();
+      slots = data.Slot;
+
+      const grid = document.getElementById("slotGrid");
+      grid.innerHTML = "";
+
+      slots.forEach(slot => {
+        grid.innerHTML += `
+      <div class="bg-white rounded-lg shadow-md hover:shadow-xl border border-gray-200 p-5 cursor-pointer transform hover:scale-105 transition-all duration-200"
+           onclick="editSlot(${slot.ID})">
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-gray-900">Slot ${slot.ID}</h2>
+          <span class="px-3 py-1 text-xs font-bold rounded-full uppercase ${getStatusColor(slot.status)}">
+            ${slot.status}
+          </span>
+        </div>
+
+        ${slot.status === "empty" ? `
+          <div class="py-8 text-center">
+            <svg class="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+            </svg>
+            <p class="text-gray-500 font-medium text-sm">Available Slot</p>
+          </div>
+        ` : `
+          <div class="space-y-3 text-sm">
+            <div class="flex items-start gap-2">
+              <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+              </svg>
+              <div class="flex-1">
+                <p class="text-gray-500 text-xs font-medium uppercase">Vehicle</p>
+                <p class="text-gray-900 font-semibold">${slot.car}</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start gap-2">
+              <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              <div class="flex-1">
+                <p class="text-gray-500 text-xs font-medium uppercase">Issue</p>
+                <p class="text-gray-900 font-medium">${slot.problem}</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start gap-2">
+              <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+              <div class="flex-1">
+                <p class="text-gray-500 text-xs font-medium uppercase">Technician</p>
+                <p class="text-gray-900 font-medium">${slot.staffname}</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start gap-2">
+              <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div class="flex-1">
+                <p class="text-gray-500 text-xs font-medium uppercase">Scheduled</p>
+                <p class="text-gray-900 font-medium">${slot.time}</p>
+              </div>
+            </div>
+          </div>
+        `}
+
+        <div class="mt-4 pt-3 border-t border-gray-100 text-center">
+          <span class="text-blue-600 text-xs font-semibold">Click to edit</span>
+        </div>
+      </div>
+    `;
+      });
+    }
+
+
+    function getStatusColor(status) {
+      switch (status) {
+        case "empty": return "bg-gray-200 text-gray-700";
+        case "booked": return "bg-yellow-100 text-yellow-700";
+        case "in-progress": return "bg-blue-100 text-blue-700";
+        case "completed": return "bg-green-100 text-green-700";
+      }
+    }
+
+    // EDIT SLOT
+function editSlot(id) {
+  const slot = slots.find(s => s.ID === id);
+
+  document.getElementById("slotId").value = slot.ID;
+  document.getElementById("carModel").value = slot.CarModel || "";
+  document.getElementById("complaint").value = slot.Problem || "";
+  document.getElementById("time").value = slot.time || "";
+  document.getElementById("staff").value = slot.StaffName || "";
+  document.getElementById("status").value = slot.Status;
+
+  toggleForm();
+}
+
+
+    // SAVE SLOT (PUT REQUEST)
+    async function saveSlot() {
+      const id = document.getElementById("slotId").value;
+
+      const body = {
+        carModel: document.getElementById("carModel").value,
+        complaint: document.getElementById("complaint").value,
+        time: document.getElementById("time").value,
+        staff: document.getElementById("staff").value,
+        status: document.getElementById("status").value
+      };
+
+      await fetch(`/Admin/Slot/update/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      toggleForm();
+      loadSlots();
+    }
+
+    function toggleForm() {
+      document.getElementById("slotForm").classList.toggle("hidden");
+    }
+
+    loadSlots();
+  </script>
+
+</body>
+
+</html>

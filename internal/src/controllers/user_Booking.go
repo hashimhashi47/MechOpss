@@ -1,0 +1,51 @@
+package controllers
+
+import (
+	"MechOpss/internal/src/constants"
+	"MechOpss/internal/src/models"
+	"MechOpss/internal/src/utils"
+	"net/http"
+	"github.com/gin-gonic/gin"
+)
+
+
+//booking the service by user
+func (s *UserController) UserBooking(c *gin.Context) {
+
+	UserID := c.MustGet("id").(uint)
+	var Input struct {
+		CarModel  string `json:"carmodel" binding:"required"`
+		CarNumber string `json:"carnumber" binding:"required"`
+		FuelType  string `json:"fueltype" binding:"required"`
+		Problem   string `json:"problem" binding:"required"`
+		Time      string `json:"time" binding:"required"`
+		Date      string `json:"date" binding:"required"`
+		Address   string `json:"address" binding:"required"`
+		LandMark  string `json:"landmark" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&Input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+		return
+	}
+
+	Booking := models.Booking{
+		UserID:    UserID,
+		CarModel:  Input.CarModel,
+		CarNumber: Input.CarNumber,
+		FuelType:  Input.FuelType,
+		Problem:   Input.Problem,
+		Time:      Input.Time,
+		Date:      Input.Date,
+		Address:   Input.Address,
+		LandMark:  Input.LandMark,
+	}
+	var BookingId string
+	var err error
+	BookingId, err = s.Service.ServiceBookingUser(Booking)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": utils.ErrorMessage(constants.BADREQUEST, err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"Sucess": "Our Team will contact soon", "ID": utils.SuccessResponse(BookingId)})
+}

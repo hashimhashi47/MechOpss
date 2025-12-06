@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login - MechOps</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-[#C9DDE4] to-[#D9D5F0] min-h-screen flex items-center justify-center p-4">
+
+  <!-- Login Card -->
+  <div class="w-full max-w-md bg-white/40 backdrop-blur-2xl px-8 py-10 rounded-3xl shadow-xl border border-white/40">
+
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-gray-900 text-center mb-2 tracking-wide">
+      MechOps 🏎️
+    </h1>
+    <p class="text-gray-600 text-center mb-8">Admin Login</p>
+
+    <!-- Form -->
+    <form method="POST" action="/Admin/login">
+
+      <label class="block mb-4">
+        <span class="text-gray-800 font-medium">Email</span>
+        <input type="email" name="email"
+          class="mt-2 w-full px-4 py-3 rounded-xl bg-white/70 border border-white/40 shadow focus:outline-none"
+          placeholder="admin@mechops.com" required />
+      </label>
+
+      <label class="block mb-6">
+        <span class="text-gray-800 font-medium">Password</span>
+        <input type="password" name="password"
+          class="mt-2 w-full px-4 py-3 rounded-xl bg-white/70 border border-white/40 shadow focus:outline-none"
+          placeholder="••••••••" required />
+      </label>
+
+      <button type="submit" class="w-full py-3 bg-gray-900 text-white rounded-xl shadow hover:bg-gray-800 transition">
+        Login
+      </button>
+    </form>
+
+    <!-- Footer -->
+    <p class="text-center text-gray-700 text-sm mt-6">
+      © 2025 MechOps Garage
+    </p>
+
+  </div>
+
+</body>
+
+</html>
