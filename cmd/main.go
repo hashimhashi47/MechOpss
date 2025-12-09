@@ -22,7 +22,7 @@ func main() {
 	//5
 	routes.UserRoutes(r, userController)
 	r.LoadHTMLGlob("../templates/*.html")
-
+	routes.StaffRoutes(r)
 	routes.AdminRoute(r)
 
 	r.Run(":8008")
