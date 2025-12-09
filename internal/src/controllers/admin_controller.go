@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
+//indirect conncetion with repository using dependency injection
 //strcut to access the service
 type AdminController struct {
 	Service *services.AdminService

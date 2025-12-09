@@ -23,7 +23,8 @@
     </div>
 
     <!-- SLOT EDIT FORM -->
-    <div id="slotForm" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4" style="z-index: 1000;">
+    <div id="slotForm" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4"
+      style="z-index: 1000;">
       <form class="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
 
         <div class="flex items-center justify-between mb-6">
@@ -37,43 +38,39 @@
 
         <input type="hidden" id="slotId">
 
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Car Model</label>
-            <input id="carModel" placeholder="Enter car model" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          </div>
-          
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Complaint</label>
-            <input id="complaint" placeholder="Describe the issue" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          </div>
-          
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Scheduled Time</label>
-            <input id="time" type="datetime-local" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          </div>
-          
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Assigned Staff</label>
-            <input id="staff" placeholder="Staff member name" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          </div>
-          
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Status</label>
-            <select id="status" class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="empty">Empty</option>
-              <option value="booked">Booked</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Service Start</label>
+          <input id="start" type="datetime-local"
+            class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Service End</label>
+          <input id="end" type="datetime-local"
+            class="p-3 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+          <input id="desc" type="text" class="p-3 w-full border rounded-lg" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+          <select id="status" class="p-3 w-full border rounded-lg">
+            <option value="ASSIGNEDSLOT">ASSIGNED SLOT</option>
+            <option value="SERVICE STARTED">SERVICE STARTED</option>
+            <option value="SERVICE ENDED">SERVICE ENDED</option>
+            <option value="COMPLETED">COMPLETED</option>
+          </select>
         </div>
 
         <div class="flex gap-3 mt-6">
           <button type="button" onclick="toggleForm()"
             class="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg">Cancel</button>
           <button type="button" onclick="saveSlot()"
-            class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg">Save Changes</button>
+            class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg">Save
+            Changes</button>
         </div>
       </form>
     </div>
@@ -83,13 +80,16 @@
   <script>
     let slots = [];
 
-    // ---------------------------
     // LOAD SLOTS FROM BACKEND
     // ---------------------------
     async function loadSlots() {
-      const res = await fetch("/Admin/GetSlots");
-      const data = await res.json();
-      slots = data.Slot;
+      const res = await fetch("/admin/getslots");
+      const body = await res.json();
+
+      // FIXED: Correct location of data array
+      slots = body.success.data;
+
+      console.log("slots:", slots);
 
       const grid = document.getElementById("slotGrid");
       grid.innerHTML = "";
@@ -115,6 +115,8 @@
           </div>
         ` : `
           <div class="space-y-3 text-sm">
+
+            <!-- CAR MODEL -->
             <div class="flex items-start gap-2">
               <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
@@ -124,36 +126,40 @@
                 <p class="text-gray-900 font-semibold">${slot.car}</p>
               </div>
             </div>
-            
+
+            <!-- PROBLEM -->
             <div class="flex items-start gap-2">
               <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
               </svg>
               <div class="flex-1">
                 <p class="text-gray-500 text-xs font-medium uppercase">Issue</p>
-                <p class="text-gray-900 font-medium">${slot.problem}</p>
+                <p class="text-gray-900 font-medium">${slot.description}</p>
               </div>
             </div>
-            
+
+            <!-- STAFF -->
             <div class="flex items-start gap-2">
               <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
               </svg>
               <div class="flex-1">
                 <p class="text-gray-500 text-xs font-medium uppercase">Technician</p>
-                <p class="text-gray-900 font-medium">${slot.staffname}</p>
+                <p class="text-gray-900 font-medium">${slot.staff_id ?? "Not Assigned"}</p>
               </div>
             </div>
-            
+
+            <!-- TIME -->
             <div class="flex items-start gap-2">
               <svg class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
               <div class="flex-1">
                 <p class="text-gray-500 text-xs font-medium uppercase">Scheduled</p>
-                <p class="text-gray-900 font-medium">${slot.time}</p>
+                <p class="text-gray-900 font-medium">${new Date(slot.Time).toLocaleString()}</p>
               </div>
             </div>
+
           </div>
         `}
 
@@ -166,28 +172,32 @@
     }
 
 
+    // COLOR HANDLER (FIXED)
     function getStatusColor(status) {
       switch (status) {
         case "empty": return "bg-gray-200 text-gray-700";
         case "booked": return "bg-yellow-100 text-yellow-700";
         case "in-progress": return "bg-blue-100 text-blue-700";
-        case "completed": return "bg-green-100 text-green-700";
+        case "completed":
+        case "COMPLETED": return "bg-green-100 text-green-700";
+        case "ASSIGNEDSLOT": return "bg-purple-100 text-purple-700";
+        default: return "bg-gray-200 text-gray-700";
       }
     }
 
     // EDIT SLOT
-function editSlot(id) {
-  const slot = slots.find(s => s.ID === id);
+    function editSlot(id) {
+      const slot = slots.find(s => s.ID === id);
+      if (!slot) return;
 
-  document.getElementById("slotId").value = slot.ID;
-  document.getElementById("carModel").value = slot.CarModel || "";
-  document.getElementById("complaint").value = slot.Problem || "";
-  document.getElementById("time").value = slot.time || "";
-  document.getElementById("staff").value = slot.StaffName || "";
-  document.getElementById("status").value = slot.Status;
+      document.getElementById("slotId").value = slot.ID;
+      document.getElementById("status").value = slot.status || "";
+      document.getElementById("start").value = slot.service_start || "";
+      document.getElementById("end").value = slot.service_end || "";
+      document.getElementById("desc").value = slot.description || "";
+      toggleForm();
+    }
 
-  toggleForm();
-}
 
 
     // SAVE SLOT (PUT REQUEST)
@@ -202,7 +212,7 @@ function editSlot(id) {
         status: document.getElementById("status").value
       };
 
-      await fetch(`/Admin/Slot/update/${id}`, {
+      await fetch(`/sdmin/slot/update/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)

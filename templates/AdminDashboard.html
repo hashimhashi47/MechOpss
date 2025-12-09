@@ -7,13 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen flex overflow-hidden">
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 h-screen flex overflow-hidden">
 
   <!-- Sidebar -->
   {{ template "sidebar" }}
 
   <!-- Main Content -->
-  <main class="flex-1 p-8 overflow-y-auto">
+  <main class="flex-1 px-8 pt-8 pb-16 overflow-y-auto">
 
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
@@ -95,14 +95,15 @@
     <!-- Recent Bookings & Staff -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-      <!-- Recent Bookings -->
-      <div class="lg:col-span-2 p-6 rounded-2xl bg-white shadow-lg shadow-slate-200/50 border border-slate-100">
+      <!-- Recent Bookings with Fixed Height and Scroll -->
+      <div class="lg:col-span-2 p-6 rounded-2xl bg-white shadow-lg shadow-slate-200/50 border border-slate-100 flex flex-col">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-xl font-bold text-slate-900">Recent Bookings</h3>
           <span class="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full">Latest</span>
         </div>
 
-        <div id="recentBookings" class="space-y-3">
+        <!-- Scrollable container with fixed height -->
+        <div id="recentBookings" class="space-y-3 overflow-y-auto max-h-96 pr-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
           <p class="text-slate-500">Loading recent bookings...</p>
         </div>
       </div>
@@ -202,6 +203,34 @@
     }
     loadDashboard();
   </script>
+
+  <!-- Custom Scrollbar Styles -->
+  <style>
+    /* Custom scrollbar styling */
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .scrollbar-thumb-slate-300::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 3px;
+    }
+    
+    .scrollbar-thumb-slate-300::-webkit-scrollbar-thumb:hover {
+      background-color: #94a3b8;
+    }
+    
+    .scrollbar-track-slate-100::-webkit-scrollbar-track {
+      background-color: #f1f5f9;
+      border-radius: 3px;
+    }
+    
+    /* For Firefox */
+    .scrollbar-thin {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+  </style>
 
 </body>
 </html>

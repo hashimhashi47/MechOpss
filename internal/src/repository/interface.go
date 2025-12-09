@@ -14,5 +14,8 @@ type Repository interface {
 	First(model interface{}) error
 	LimitFind(model interface{}, limit int) error
 	Delete(model interface{}, id string) error
-	FindBookingByID(model interface{}, id string) error
+	FindBookingWithStaffAndSlot(model interface{}, id string) error
+	FindAllBookingsWithStaff(model interface{}) error
+	FindAllStaffsWithBookings(model interface{}) error
+	FindStaffByIDWithBookings(model interface{}, id uint) error
 }

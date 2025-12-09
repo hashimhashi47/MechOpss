@@ -7,14 +7,17 @@ import (
 	"errors"
 )
 
+//indirect conncetion with repository using dependency injection
 type AdminService struct {
 	Repo repository.Repository
 }
-
+// constructor
 func NewAdminService(repo repository.Repository) *AdminService {
 	return &AdminService{Repo: repo}
 }
 
+
+//admin login
 func (s *AdminService) AdminLogin(email, password string) (*models.Admin, string, string, error) {
 	// Fetch admin
 	admin, err := s.Repo.FindAdminByEmail(email)

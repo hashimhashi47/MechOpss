@@ -9,10 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
+//indirect conncetion with repository using dependency injection
 type UserService struct {
 	repo repository.Repository
 }
-
+// constructor
 func NewUserservices(r repository.Repository) *UserService {
 	return &UserService{repo: r}
 }
@@ -66,6 +68,10 @@ func (r *UserService) Login(data *models.User) (interface{}, uint, string, error
 	}
 
 	return resp, user.ID, access, nil
+}
+
+func (s *UserService) ServiceUpdateuser(){
+
 }
 
 func (s *UserService) Logout(userID interface{}) error {

@@ -18,7 +18,6 @@ func (s *AdminService) GetUsers() ([]models.User, error) {
 
 // update user
 func (s *AdminService) ServiceUpdateUser(Input models.User, id string) (interface{}, error) {
-
 	var user models.User
 
 	if err := s.Repo.FindByID(&user, id); err != nil {
@@ -47,9 +46,8 @@ func (s *AdminService) ServiceUpdateUser(Input models.User, id string) (interfac
 }
 
 
-// delete user
+// delete user 
 func (s *AdminService) ServiceDeleteuser(model interface{}, id string) error {
-
 	if err := s.Repo.Delete(model, id); err != nil {
 		return errors.New("user not found")
 	}

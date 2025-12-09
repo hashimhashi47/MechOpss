@@ -28,12 +28,12 @@ func (c *AdminService) ServiceStaffRegister(model *models.Staff) (interface{}, e
 	return model, nil
 }
 
+
 // GetStaff
 func (c *AdminService) ServiceGetStaff() ([]models.Staff, error) {
 	var Staff []models.Staff
-
-	if err := c.Repo.FindAll(&Staff); err != nil {
-		return nil, errors.New("staff not found")
+	if err := c.Repo.FindAllStaffsWithBookings(&Staff); err != nil {
+		return nil, err
 	}
 	return Staff, nil
 }
@@ -74,8 +74,7 @@ func (c *AdminService) ServiceUpdateStaff(Input models.Staff, id string) (interf
 	return ExistingStaff, nil
 }
 
-
-//block staff
+// block staff
 func (c *AdminService) ServiceBlockStaff(id string, body bool) (models.Staff, error) {
 
 	var staff models.Staff

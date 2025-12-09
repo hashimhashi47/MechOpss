@@ -261,7 +261,7 @@
     // REJECT → Delete only
     // ----------------------
     async function rejectBooking(id) {
-      await fetch(`/Admin/Reject/${id}`, { method: "DELETE" });
+      await fetch(`/admin/rejectbooking/${id}`, { method: "GET" });
       loadBookings();
     }
 
@@ -276,7 +276,7 @@
 
       try {
         const payload = { staff_id: staffId };
-        const response = await fetch(`/Admin/Assign/${id}`, {
+        const response = await fetch(`/admin/assign/${id}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)

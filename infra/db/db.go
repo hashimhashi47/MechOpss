@@ -30,7 +30,7 @@ func Connection() *gorm.DB {
 		&models.Booking{},
 		&models.Admin{},
 		&models.Staff{},
-		&models.Booked{},
+		&models.Bookeds{},
 		&models.Slot{},
 	)
 

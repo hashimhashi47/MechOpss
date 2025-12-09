@@ -5,6 +5,7 @@ import (
 	"MechOpss/internal/src/controllers"
 	"MechOpss/internal/src/repository"
 	"MechOpss/internal/src/services"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,7 +55,7 @@ func AdminRoute(r *gin.Engine) {
 		Admin.PUT("/blockstaff/:id", adminController.BlockStaff)
 		Admin.DELETE("/deletestaff/:id", adminController.DeleteStaff)
 
-		//Bokking
+		//Booking
 		Admin.GET("/getbookings", adminController.GetBooking)
 		Admin.POST("/approve/:id", adminController.ApproveBooking)
 
@@ -62,6 +63,14 @@ func AdminRoute(r *gin.Engine) {
 		Admin.GET("/getbooked", adminController.GetBooked)
 		Admin.POST("/assignstaff/:id", adminController.AssignStaff)
 		Admin.PUT("/update/booked/:id", adminController.UpdateBooked)
+		Admin.POST("/assign/:id", adminController.AsignBooking)
+		Admin.GET("/rejectbooking/:id", adminController.RejectBooking)
+
+		//slots
+		Admin.GET("/getslots", adminController.GetSlots)
+		Admin.POST("/addslot/:id", adminController.AddSlot)
+		// Admin.PUT("/slot/update/:id")
+
 	}
 
 }

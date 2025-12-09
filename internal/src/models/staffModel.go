@@ -2,8 +2,6 @@ package models
 
 import "gorm.io/gorm"
 
-
-
 type Staff struct {
 	gorm.Model
 	FirstName    string   `json:"firstname"`
@@ -15,5 +13,5 @@ type Staff struct {
 	Block        bool     `json:"block" gorm:"default:false"`
 	RefreshToken string   `json:"-" gorm:"type:text"`
 	Password     string   `json:"password"`
-	Bookings     []Booked `gorm:"foreignKey:StaffID"`
+	Bookings     []Bookeds `gorm:"foreignKey:StaffID;references:ID"`
 }

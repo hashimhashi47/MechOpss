@@ -13,9 +13,8 @@ func UserRoutes(e *gin.Engine, userController *controllers.UserController) {
 	{
 		User.POST("/signup", userController.RegisterAuth)
 		User.POST("/login", userController.LoginAuth)
-		User.POST("/logout", userController.UserLogout)
+		User.POST("/logout", middleware.Middleware(constants.User), userController.UserLogout)
 		User.POST("/bookingservice", middleware.Middleware(constants.User), userController.UserBooking)
-
 	}
 
 }

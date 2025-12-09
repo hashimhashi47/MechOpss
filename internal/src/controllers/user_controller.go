@@ -10,10 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
+//indirect conncetion with service using dependency injection
 type UserController struct {
 	Service *services.UserService
 }
-
+// constructor
 func NewController(s *services.UserService) *UserController {
 	return &UserController{Service: s}
 }

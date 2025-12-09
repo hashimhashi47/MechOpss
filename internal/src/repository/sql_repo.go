@@ -2,7 +2,6 @@ package repository
 
 import (
 	"MechOpss/internal/src/models"
-
 	"gorm.io/gorm"
 )
 
@@ -87,7 +86,24 @@ func (r *SQLrepo) Delete(model interface{}, id string) error {
 	return r.DB.Where("id = ?", id).Unscoped().Delete(model).Error
 }
 
-
-func (r *SQLrepo) FindBookingByID(model interface{}, id string) error {
-	return r.DB.Where("booked_id = ?", id).First(model).Error
+// get a specific booked with staff
+func (r *SQLrepo) FindBookingWithStaffAndSlot(model interface{}, id string) error {
+	return r.DB.Preload("Staff").Preload("Slot").Where("id = ?", id).First(model).Error
 }
+
+// get all booking with staff
+func (r *SQLrepo) FindAllBookingsWithStaff(model interface{}) error {
+	return r.DB.Preload("Staff").Find(model).Error
+}
+
+// get all staffs with their bookings preloaded
+func (r *SQLrepo) FindAllStaffsWithBookings(model interface{}) error {
+	return r.DB.Preload("Bookings").Find(model).Error
+}
+
+// get a single staff by ID with bookings
+func (r *SQLrepo) FindStaffByIDWithBookings(model interface{}, id uint) error {
+	return r.DB.Preload("Bookings").First(model, id).Error
+}
+
+
