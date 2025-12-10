@@ -2,8 +2,8 @@ package services
 
 import (
 	"MechOpss/internal/src/models"
+	"MechOpss/internal/src/utils/constants"
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 )
@@ -38,7 +38,7 @@ func (s *AdminService) AssignStaffService(bookingID string, staffIDstr string) (
 	}
 
 	var updated models.Bookeds
-	if err := s.Repo.FindBookingWithStaffAndSlot(&updated, bookingID); err != nil {
+	if err := s.Repo.FindWithTwoPreload(&updated, constants.PRELOADSTAFF, constants.PRELOADSLOT, bookingID); err != nil {
 		return nil, errors.New("failed to load staff data")
 	}
 
@@ -51,7 +51,7 @@ func (s *AdminService) ServiceUpadteBooked(id string, Input models.Bookeds) (int
 	var Booked models.Bookeds
 	var Slot models.Slot
 
-	if err := s.Repo.FindBookingWithStaffAndSlot(&Booked, id); err != nil {
+	if err := s.Repo.FindWithTwoPreload(&Booked, constants.PRELOADSTAFF, constants.PRELOADSLOT, id); err != nil {
 		return nil, errors.New("booking not found")
 	}
 
@@ -79,9 +79,9 @@ func (s *AdminService) ServiceUpadteBooked(id string, Input models.Bookeds) (int
 		if err := s.Repo.Save(&Slot); err != nil {
 			return nil, errors.New("failed to update")
 		}
-
 	}
 
+	//updating the bookeds what are up need to be updated
 	if Input.Status != "" {
 		Booked.Status = Input.Status
 	}
@@ -120,37 +120,54 @@ func (s *AdminService) ServiceUpadteBooked(id string, Input models.Bookeds) (int
 
 // add slot from booked to slots
 func (s *AdminService) ServiceAddSlot(id string) (interface{}, error) {
-	//takes the slot count
-	var TotalSlot models.Slot
-	var err error
-	count, err := s.Repo.Count(&TotalSlot)
-	if err != nil {
-		return nil, errors.New("failed to get the count of bookeds")
-	}
-	fmt.Println("✅", count)
-	if count >= 5 {
-		return nil, errors.New("maximum space for slot")
+	
+	var Bookeds models.Bookeds
+	if err := s.Repo.FindWithTwoPreload(&Bookeds, constants.PRELOADSTAFF, constants.PRELOADSLOT, id); err != nil {
+		return models.Slot{}, errors.New("failed to find bookeds")
 	}
 
-	var Bookeds models.Bookeds
-	if err := s.Repo.FindBookingWithStaffAndSlot(&Bookeds, id); err != nil {
-		return models.Slot{}, errors.New("failed to find bookeds")
+	if Bookeds.StaffID == nil {
+		return nil, errors.New("select the staff")
 	}
 
 	if Bookeds.SlotID != nil {
 		return nil, errors.New("already on the slot")
 	}
 
-	Slot := models.Slot{
-		CarModel:  Bookeds.CarModel,
-		Time:      time.Now(),
-		CarNumber: Bookeds.CarNumber,
-		StaffID:   Bookeds.StaffID,
-		StaffName: Bookeds.Staff.FirstName,
-		Status:    Bookeds.Status,
+	var slots []models.Slot
+	var Slot *models.Slot
+	if err := s.Repo.FindAll(&slots); err != nil {
+		return nil, errors.New("not avilable ")
 	}
-	if err := s.Repo.Insert(&Slot); err != nil {
-		return models.Slot{}, errors.New("unable to add these slot to database")
+	//loop all the slot and check is empty or not
+	for i := range slots {
+		if slots[i].Status == "EMPTY" {
+			Slot = &slots[i]
+			break
+		}
 	}
+
+	if Slot == nil {
+		return nil, errors.New("no empty slots available")
+	}
+	//addd the details to the empty slot
+	now := time.Now()
+	Slot.CarModel = Bookeds.CarModel
+	Slot.Time = &now
+	Slot.CarNumber = Bookeds.CarNumber
+	Slot.StaffID = Bookeds.StaffID
+	Slot.StaffName = Bookeds.Staff.FirstName
+	Slot.Status = Bookeds.Status
+
+	// Save the updated slot
+	if err := s.Repo.Save(Slot); err != nil {
+		return nil, errors.New("failed to update slot")
+	}
+
+	Bookeds.SlotID = &Slot.ID
+	if err := s.Repo.Save(&Bookeds); err != nil {
+		return nil, errors.New("failed to update booked slot reference")
+	}
+
 	return Slot, nil
 }

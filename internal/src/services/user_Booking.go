@@ -6,6 +6,7 @@ import (
 	"errors"
 )
 
+//user booking
 func (c *UserService) ServiceBookingUser(data models.Booking) (string, error) {
 	ID := utils.RandomIDGenerate("BOOK")
 	data.ID = ID

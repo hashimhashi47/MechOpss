@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"MechOpss/infra/db"
+
 	"MechOpss/internal/src/models"
 	"MechOpss/internal/src/utils"
-	"fmt"
+	"MechOpss/internal/src/utils/constants"
 	"net/http"
 	"os"
 
@@ -52,38 +53,75 @@ func Middleware(role ...string) gin.HandlerFunc {
 		}
 
 		userID := claim.UserId
-		fmt.Println("✅", userID)
-		var user models.User
-		fmt.Println("✅", user)
-		if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to find Refershtoken"})
-			c.Abort()
-			return
+		for _, v := range role {
+			if v == constants.Staff {
+				var staff models.Staff
+				if err := db.DB.Where("id = ?", userID).First(&staff).Error; err != nil {
+
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to find Refershtoken"})
+					c.Abort()
+					return
+				}
+
+				//unwarp the token with key
+				Refershclaim := &utils.Claims{}
+				token, err := jwt.ParseWithClaims(staff.RefreshToken, Refershclaim, func(t *jwt.Token) (interface{}, error) {
+					return KEY, nil
+				})
+
+				if err != nil || !token.Valid {
+					c.JSON(http.StatusBadRequest, gin.H{"Error": "RefershToken expired or Missing"})
+					c.Abort()
+					return
+				}
+
+				NewAccessToken, err := utils.AccessToken(Refershclaim.UserId, Refershclaim.Email, Refershclaim.Role)
+
+				if err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"Error": "Unable to Create refersh Token"})
+					c.Abort()
+					return
+				}
+
+				c.SetCookie("Token", NewAccessToken, 7*24*3600, "/", "localhost", false, true)
+				c.Set("id", Refershclaim.UserId)
+				c.Next()
+			}
+
+			if v == constants.User {
+				var user models.User
+				if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to find Refershtoken"})
+					c.Abort()
+					return
+				}
+
+				//unwarp the token with key
+				Refershclaim := &utils.Claims{}
+				token, err := jwt.ParseWithClaims(user.RefreshToken, Refershclaim, func(t *jwt.Token) (interface{}, error) {
+					return KEY, nil
+				})
+
+				if err != nil || !token.Valid {
+					c.JSON(http.StatusBadRequest, gin.H{"Error": "RefershToken expired or Missing"})
+					c.Abort()
+					return
+				}
+
+				NewAccessToken, err := utils.AccessToken(Refershclaim.UserId, Refershclaim.Email, Refershclaim.Role)
+
+				if err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"Error": "Unable to Create refersh Token"})
+					c.Abort()
+					return
+				}
+
+				c.SetCookie("Token", NewAccessToken, 7*24*3600, "/", "localhost", false, true)
+				c.Set("id", Refershclaim.UserId)
+				c.Next()
+			}
 		}
-
-		//unwarp the token with key
-		Refershclaim := &utils.Claims{}
-		token, err := jwt.ParseWithClaims(user.RefreshToken, Refershclaim, func(t *jwt.Token) (interface{}, error) {
-			return KEY, nil
-		})
-
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "RefershToken expired or Missing"})
-			c.Abort()
-			return
-		}
-
-		NewAccessToken, err := utils.AccessToken(Refershclaim.UserId, Refershclaim.Email, Refershclaim.Role)
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "Unable to Create refersh Token"})
-			c.Abort()
-			return
-		}
-
-		c.SetCookie("Token", NewAccessToken, 7*24*3600, "/", "localhost", false, true)
-		c.Set("id", Refershclaim.UserId)
-		c.Next()
 	}
 }

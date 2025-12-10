@@ -1,13 +1,15 @@
 package routes
 
 import (
-	"MechOpss/internal/src/constants"
 	"MechOpss/internal/src/controllers"
 	"MechOpss/internal/src/middleware"
+	"MechOpss/internal/src/utils/constants"
+
 	"github.com/gin-gonic/gin"
 )
 
 func UserRoutes(e *gin.Engine, userController *controllers.UserController) {
+	
 	User := e.Group("/user")
 
 	{

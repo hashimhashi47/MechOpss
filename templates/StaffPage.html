@@ -220,7 +220,7 @@
 
       try {
         if (id) {
-          await fetch(`/admin/upadateStaff/${id}`, {
+          await fetch(`/admin/updateStaff/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

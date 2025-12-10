@@ -3,6 +3,7 @@ package services
 import (
 	"MechOpss/internal/src/models"
 	"MechOpss/internal/src/utils"
+	"MechOpss/internal/src/utils/constants"
 	"errors"
 )
 
@@ -20,14 +21,13 @@ func (c *AdminService) ServiceStaffRegister(model *models.Staff) (interface{}, e
 	}
 	model.Password = string(Hash)
 	model.IdentityCard = IdentityID
+	model.Role = constants.Staff
 
 	if err := c.Repo.Insert(&model); err != nil {
 		return nil, errors.New("failed to Store staff data")
 	}
-
 	return model, nil
 }
-
 
 // GetStaff
 func (c *AdminService) ServiceGetStaff() ([]models.Staff, error) {

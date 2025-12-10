@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"MechOpss/internal/src/constants"
 	"MechOpss/internal/src/models"
 	"MechOpss/internal/src/utils"
+	"MechOpss/internal/src/utils/constants"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
 // add staffs to database
@@ -73,6 +73,7 @@ func (ac *AdminController) UpdateStaff(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"Success": utils.SuccessResponseMsg(data, "succesfully updated staff details")})
 }
+
 
 func (ac *AdminController) BlockStaff(c *gin.Context) {
 	id := c.Param("id")

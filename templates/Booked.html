@@ -42,9 +42,11 @@
           <p class="text-gray-600 text-sm">Manage and track all service bookings</p>
         </div>
 
-        <div class="bg-blue-600 text-white px-6 py-4 rounded-lg shadow-sm min-w-[140px]">
-          <div class="text-3xl font-bold mb-1" id="totalCount">0</div>
-          <div class="text-sm opacity-90">Total Bookings</div>
+        <div class="flex gap-4">
+          <div class="bg-blue-600 text-white px-6 py-4 rounded-lg shadow-sm min-w-[140px]">
+            <div class="text-3xl font-bold mb-1" id="totalCount">0</div>
+            <div class="text-sm opacity-90">Total Bookings</div>
+          </div>
         </div>
       </div>
     </div>
@@ -141,8 +143,9 @@
   <script>
     let booked = [];
     let staffList = [];
+    let slotCount = 0;
+    const MAX_SLOTS = 5;
 
-    // Status color mapping
     const statusColors = {
       'UNAVAILABLE': 'bg-red-100 text-red-800 border-2 border-red-500',
       'PENDING': 'bg-amber-100 text-amber-800 border-2 border-amber-500',
@@ -157,7 +160,6 @@
       'WAITING': 'bg-yellow-100 text-yellow-800 border-2 border-yellow-500'
     };
 
-    // Get status badge HTML
     function getStatusBadge(status) {
       const colors = statusColors[status] || 'bg-gray-100 text-gray-800 border-2 border-gray-500';
       return `
@@ -167,9 +169,6 @@
       `;
     }
 
-    // ---------------------------
-    // LOAD STAFF
-    // ---------------------------
     async function loadStaff() {
       try {
         const staffRes = await fetch("/admin/getstaff");
@@ -181,15 +180,34 @@
       }
     }
 
-    // Get staff name by ID
     function getStaffName(staffId) {
       const staff = staffList.find(s => s.ID == staffId);
       return staff ? `${staff.firstname} ${staff.lastname}` : "Unknown";
     }
 
-    // ---------------------------
-    // LOAD BOOKINGS
-    // ---------------------------
+    // Fetch slot count
+    async function getSlotCount() {
+      try {
+        const res = await fetch("/admin/getslots");
+        const data = await res.json();
+
+        if (data.Success && typeof data.Success.data === 'number') {
+          slotCount = data.Success.data;
+        } else {
+          slotCount = 0;
+        }
+
+        updateSlotDisplay();
+      } catch (err) {
+        console.error("Error loading slot count:", err);
+        slotCount = 0;
+      }
+    }
+
+    function updateSlotDisplay() {
+      document.getElementById("slotCountDisplay").textContent = slotCount;
+    }
+
     async function loadBooked() {
       try {
         const res = await fetch("/admin/getbooked");
@@ -216,6 +234,7 @@
         booked.forEach(b => {
           const hasStaff = b.staff_id;
           const staffName = hasStaff ? getStaffName(b.staff_id) : "";
+          const isSlotted = b.slot_id != null && b.slot_id != undefined;
 
           const staffCell = hasStaff
             ? `
@@ -318,20 +337,23 @@
               <input type="datetime-local" id="delivery-${b.id}" value="${b.delivery || ""}" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full">
             </td>
   
-         <td class="px-4 py-3 text-center">
-       <div class="flex flex-col items-center gap-1"> 
-        <div id="slot-label-${b.id}" 
-         class="hidden bg-purple-100 text-purple-700 px-3 py-1 rounded-md text-xs font-semibold border border-purple-300 shadow">
-        Slotted ✔
-       </div>
-      <button 
-      id="slot-btn-${b.id}"
-      onclick="addToSlot('${b.id}')"
-      class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
-      Add to Slot
-       </button>
-      </div>
-          </td>
+            <td class="px-4 py-3 text-center">
+              <div class="flex flex-col items-center gap-2"> 
+                ${isSlotted ? `
+                  <div class="bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 px-4 py-2 rounded-lg text-sm font-bold border-2 border-purple-400 shadow-md">
+                    ✓ Slotted
+                  </div>
+                ` : `
+                  <button 
+                    id="slot-btn-${b.id}"
+                    onclick="addToSlot('${b.id}')"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-all shadow hover:shadow-lg">
+                    + Add to Slot
+                  </button>
+                `}
+              </div>
+            </td>
+
             <td class="px-4 py-3 text-center">
               <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors" onclick="saveRow('${b.id}')">
                 Save
@@ -346,7 +368,6 @@
       }
     }
 
-    // Status change functions
     function editStatus(id) {
       document.getElementById(`status-display-${id}`).classList.add('hidden');
       document.getElementById(`status-${id}`).classList.remove('hidden');
@@ -358,14 +379,12 @@
       document.getElementById(`status-display-${id}`).classList.remove('hidden');
       document.getElementById(`status-${id}`).classList.add('hidden');
 
-      // Update the booking data
       const booking = booked.find(b => b.id == id);
       if (booking) {
         booking.status = status;
       }
     }
 
-    // Show edit options
     function changeStaff(id) {
       document.getElementById(`staff-display-${id}`).classList.add("hidden");
       document.getElementById(`staff-edit-${id}`).classList.remove("hidden");
@@ -376,11 +395,13 @@
       document.getElementById(`staff-edit-${id}`).classList.add("hidden");
     }
 
-    // Assign staff
     async function assignBooking(id) {
       const staffId = document.getElementById(`staff-${id}`).value;
 
-      if (!staffId) return alert("Select a staff first!");
+      if (!staffId) {
+        alert("⚠️ Please select a staff member first!");
+        return;
+      }
 
       try {
         const response = await fetch(`/admin/assignstaff/${id}`, {
@@ -390,19 +411,37 @@
         });
 
         const data = await response.json();
-        console.log("Assign Resp:", data);
+        console.log("Assign Response:", data);
 
-        alert("Assigned successfully!");
-        loadBooked();
+        if (!response.ok || data.Error || data.error) {
+          alert(`❌ Failed to assign staff: ${data.Error || data.error || 'Unknown error'}`);
+          return;
+        }
+
+        alert("✅ Staff assigned successfully!");
+        await loadBooked();
 
       } catch (err) {
         console.error("Error assigning staff:", err);
-        alert("Failed to assign staff");
+        alert("❌ Failed to assign staff. Please try again.");
       }
     }
 
-
     async function addToSlot(id) {
+      const booking = booked.find(b => b.id == id);
+
+      // Check if staff assigned
+      if (!booking || !booking.staff_id) {
+        alert("⚠️ Please assign a staff member before adding to slot!");
+        return;
+      }
+
+      // Check if already inside a slot
+      if (booking.slot_id) {
+        alert("ℹ️ This booking is already in a slot!");
+        return;
+      }
+
       try {
         const res = await fetch(`/admin/addslot/${id}`, {
           method: "POST",
@@ -410,49 +449,45 @@
         });
 
         const data = await res.json();
-        console.log("Slot Assigned Resp:", data);
+        console.log("Slot Response:", data);
 
-        if (!data.Success) {
-          alert("Failed to add slot!");
+        // Error Handling
+        if (!res.ok || data.error) {
+          const errorMsg = data.error?.message || data.error || 'Unknown error';
+
+          if (errorMsg.toLowerCase().includes("slot are full")) {
+            alert(`🔒 SLOTS ARE FULL!\nAll ${MAX_SLOTS} slots are currently occupied.`);
+          }
+
+          else if (errorMsg.toLowerCase().includes("already on the slot")) {
+            alert("ℹ️ This booking is already in a slot!");
+          }
+
+          else if (errorMsg.toLowerCase().includes("select the staff")) {
+            alert("⚠️ Please assign a staff member before adding to slot!");
+          }
+
+          else {
+            alert(`❌ Failed to add to slot: ${errorMsg}`);
+          }
+
           return;
         }
 
-        // 🔥 Update UI instantly
-        const btn = document.getElementById(`slot-btn-${id}`);
-        const slotLabel = document.getElementById(`slot-label-${id}`);
-        const statusDisplay = document.getElementById(`status-display-${id}`);
+        // Success Message
+        alert("✅ Added to slot successfully!");
 
-        // Show 'Slotted' label
-        slotLabel.classList.remove("hidden");
-
-        // Change button style & disable
-        btn.disabled = true;
-        btn.textContent = "Added";
-        btn.classList.remove("bg-purple-600", "hover:bg-purple-700");
-        btn.classList.add("bg-gray-400", "cursor-not-allowed");
-
-        // Change status to ASSIGNEDSLOT
-        statusDisplay.innerHTML = getStatusBadge("ASSIGNEDSLOT");
-
-        // 🚀 Update count after slotting
-        updateCount();
-
-        alert("Added to slot successfully!");
+        // Reload updated values
+        await getSlotCount();
+        await loadBooked();
 
       } catch (err) {
         console.error("Error adding to slot:", err);
-        alert("Failed to add to slot!");
+        alert("❌ Failed to add to slot. Please try again.");
       }
     }
 
-    // =============================
-    // UPDATE BOOKING COUNT
-    // =============================
-    function updateCount() {
-      document.getElementById("totalCount").textContent = booked.length;
-    }
 
-    // Save row update
     async function saveRow(id) {
       const payload = {
         status: document.getElementById(`status-${id}`).value,
@@ -465,26 +500,33 @@
       };
 
       try {
-        await fetch(`/admin/update/booked/${id}`, {
+        const response = await fetch(`/admin/update/booked/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
 
-        alert("Updated Successfully!");
-        loadBooked();
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+          alert(`❌ Failed to update: ${data.error?.message || data.error || 'Unknown error'}`);
+          return;
+        }
+
+        alert("✅ Updated successfully!");
+        await loadBooked();
 
       } catch (err) {
         console.error("Error updating booking:", err);
-        alert("Failed to update booking");
+        alert("❌ Failed to update booking. Please try again.");
       }
     }
 
-    // INIT
     (async () => {
       await loadStaff();
+      await getSlotCount();
       await loadBooked();
-      updateCount();
+      console.log(`📊 Slots Status: ${slotCount}/${MAX_SLOTS} used`);
     })();
 
   </script>

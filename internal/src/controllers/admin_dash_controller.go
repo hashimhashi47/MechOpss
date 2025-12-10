@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ---------------- Dashboard API ----------------
 
 // user count
 func (ac *AdminController) GetUsersCount(c *gin.Context) {

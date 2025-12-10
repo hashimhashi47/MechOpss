@@ -3,7 +3,7 @@ package models
 // After user confirm service
 type Bookeds struct {
 	ID            string  `json:"id" gorm:"primaryKey;type:varchar(50)"`
-	CarModel       string `json:"car"`
+	CarModel      string  `json:"car"`
 	ServiceStart  string  `json:"service_start"`
 	ServiceEnd    string  `json:"service_end"`
 	Delivery      string  `json:"delivery"`
@@ -21,7 +21,7 @@ type Bookeds struct {
 	Date      string `json:"date"`
 
 	SlotID *uint `json:"slot_id"`
-	
-	Slot   Slot  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Staff  Staff `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+
+	Slot  Slot  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Staff Staff `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 }

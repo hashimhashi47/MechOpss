@@ -1,11 +1,10 @@
 package controllers
 
 import (
-	"MechOpss/internal/src/constants"
 	"MechOpss/internal/src/models"
 	"MechOpss/internal/src/utils"
+	"MechOpss/internal/src/utils/constants"
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 

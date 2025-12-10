@@ -29,8 +29,8 @@ func (r *SQLrepo) Save(model interface{}) error {
 }
 
 // update the database refersh token
-func (r *SQLrepo) UpdateRefreshToken(userID interface{}, token string) error {
-	return r.DB.Model(&models.User{}).Where("id = ?", userID).Update("refresh_token", token).Error
+func (r *SQLrepo) UpdateRefreshToken(model, userID interface{}, token string) error {
+	return r.DB.Model(&model).Where("id = ?", userID).Update("refresh_token", token).Error
 }
 
 // find admin by email
@@ -52,8 +52,7 @@ func (r *SQLrepo) Count(model interface{}) (int64, error) {
 
 // take the first
 func (r *SQLrepo) First(model interface{}) error {
-	err := r.DB.First(model).Error
-	if err != nil {
+	if err := r.DB.First(model).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil
 		}
@@ -64,8 +63,7 @@ func (r *SQLrepo) First(model interface{}) error {
 
 // only find the data from the given struct limited by 5
 func (r *SQLrepo) LimitFind(model interface{}, limit int) error {
-	err := r.DB.Limit(limit).Find(model).Error
-	if err != nil {
+	if err := r.DB.Limit(limit).Find(model).Error; err != nil {
 		return err
 	}
 	return nil
@@ -86,9 +84,14 @@ func (r *SQLrepo) Delete(model interface{}, id string) error {
 	return r.DB.Where("id = ?", id).Unscoped().Delete(model).Error
 }
 
-// get a specific booked with staff
-func (r *SQLrepo) FindBookingWithStaffAndSlot(model interface{}, id string) error {
-	return r.DB.Preload("Staff").Preload("Slot").Where("id = ?", id).First(model).Error
+// find with id with two prelaod
+func (r *SQLrepo) FindWithTwoPreload(model interface{}, first, second, id string) error {
+	return r.DB.Preload(first).Preload(second).Where("id = ?", id).First(model).Error
+}
+
+// find by id with one preload
+func (r *SQLrepo) FindWithPreload(model interface{}, Preload, id string) error {
+	return r.DB.Preload(Preload).Where("id = ?", id).First(model).Error
 }
 
 // get all booking with staff
@@ -105,5 +108,3 @@ func (r *SQLrepo) FindAllStaffsWithBookings(model interface{}) error {
 func (r *SQLrepo) FindStaffByIDWithBookings(model interface{}, id uint) error {
 	return r.DB.Preload("Bookings").First(model, id).Error
 }
-
-

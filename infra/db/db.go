@@ -2,6 +2,7 @@ package db
 
 import (
 	"MechOpss/internal/src/models"
+	"MechOpss/internal/src/utils"
 	"log"
 	"os"
 
@@ -36,6 +37,10 @@ func Connection() *gorm.DB {
 
 	if err != nil {
 		log.Fatal("Failed to AutoMigrate:", err)
+	}
+
+	if err := utils.SeedSlots(DB); err != nil {
+		log.Fatal("Failed to seed slots:", err)
 	}
 
 	log.Println("Database Connected Successfully")
