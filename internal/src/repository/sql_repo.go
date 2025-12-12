@@ -79,6 +79,11 @@ func (r *SQLrepo) FindByID(model interface{}, id string) error {
 	return r.DB.Where("id = ?", id).First(model).Error
 }
 
+// find by anything by anything
+func (r *SQLrepo) FindBy(model interface{}, id string, find string) error {
+	return r.DB.Where(find, id).Find(model).Error
+}
+
 // delete permenet using id
 func (r *SQLrepo) Delete(model interface{}, id string) error {
 	return r.DB.Where("id = ?", id).Unscoped().Delete(model).Error

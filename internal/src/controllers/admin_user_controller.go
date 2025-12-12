@@ -4,7 +4,9 @@ import (
 	"MechOpss/internal/src/models"
 	"MechOpss/internal/src/utils"
 	"MechOpss/internal/src/utils/constants"
+	"fmt"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,9 +21,14 @@ func (a *AdminController) GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Sucess": utils.SuccessResponseMsg(users, "Succesfully find users")})
 }
 
-// update user
+// update user both admin and user side
 func (a *AdminController) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
+
+	if id == "" {
+		UserID, _ := c.Get("id")
+		id = fmt.Sprintf("%v", UserID)
+	}
 
 	var input models.User
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -44,7 +51,7 @@ func (a *AdminController) UpdateUser(c *gin.Context) {
 	})
 }
 
-//  delete the user from database
+// delete the user from database
 func (a *AdminController) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
@@ -73,10 +80,9 @@ func (a *AdminController) Blockuser(c *gin.Context) {
 
 	var user models.User
 	var err error
-	user, err = a.Service.ServiceBlockUser(id,  *Body.Block)
+	user, err = a.Service.ServiceBlockUser(id, *Body.Block)
 	if err != nil {
 
 	}
 	c.JSON(http.StatusOK, gin.H{"successully blocked user": utils.SuccessResponseMsg(user, "Blocked succesfully")})
 }
-

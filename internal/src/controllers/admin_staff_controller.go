@@ -5,7 +5,9 @@ import (
 	"MechOpss/internal/src/utils"
 	"MechOpss/internal/src/utils/constants"
 	"errors"
+	"fmt"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,8 +56,15 @@ func (ac *AdminController) GetStaff(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Success": utils.SuccessResponseMsg(staffs, "Succesfully find users")})
 }
 
+
+//upadte staff on admin and staff side
 func (ac *AdminController) UpdateStaff(c *gin.Context) {
 	id := c.Param("id")
+
+	if id == "" {
+		staffID, _ := c.Get("id")
+		id = fmt.Sprintf("%v", staffID)
+	}
 
 	var Input models.Staff
 
@@ -75,6 +84,7 @@ func (ac *AdminController) UpdateStaff(c *gin.Context) {
 }
 
 
+//block staff
 func (ac *AdminController) BlockStaff(c *gin.Context) {
 	id := c.Param("id")
 

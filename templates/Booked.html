@@ -24,6 +24,23 @@
     .scrollbar-thin::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
+
+    .locked-row {
+      opacity: 0.7;
+      background-color: #f9fafb !important;
+    }
+
+    .locked-badge {
+      position: relative;
+    }
+
+    .locked-badge::after {
+      content: '🔒';
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      font-size: 14px;
+    }
   </style>
 </head>
 
@@ -69,7 +86,7 @@
             </th>
             <th
               class="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide border-b border-gray-700 whitespace-nowrap"
-              style="min-width: 200px;">
+              style="min-width: 250px;">
               Message
             </th>
             <th
@@ -146,6 +163,9 @@
     let slotCount = 0;
     const MAX_SLOTS = 5;
 
+    // Define locked statuses
+    const LOCKED_STATUSES = ['REJECTED', 'DELIVERED'];
+
     const statusColors = {
       'UNAVAILABLE': 'bg-red-100 text-red-800 border-2 border-red-500',
       'PENDING': 'bg-amber-100 text-amber-800 border-2 border-amber-500',
@@ -160,10 +180,15 @@
       'WAITING': 'bg-yellow-100 text-yellow-800 border-2 border-yellow-500'
     };
 
-    function getStatusBadge(status) {
+    function isLocked(status) {
+      return LOCKED_STATUSES.includes(status);
+    }
+
+    function getStatusBadge(status, locked = false) {
       const colors = statusColors[status] || 'bg-gray-100 text-gray-800 border-2 border-gray-500';
+      const lockedClass = locked ? 'locked-badge' : '';
       return `
-        <div class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide ${colors} shadow-sm min-w-[140px]">
+        <div class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide ${colors} shadow-sm min-w-[140px] ${lockedClass}">
           ${status}
         </div>
       `;
@@ -185,7 +210,6 @@
       return staff ? `${staff.firstname} ${staff.lastname}` : "Unknown";
     }
 
-    // Fetch slot count
     async function getSlotCount() {
       try {
         const res = await fetch("/admin/getslots");
@@ -196,16 +220,51 @@
         } else {
           slotCount = 0;
         }
-
-        updateSlotDisplay();
       } catch (err) {
         console.error("Error loading slot count:", err);
         slotCount = 0;
       }
     }
 
-    function updateSlotDisplay() {
-      document.getElementById("slotCountDisplay").textContent = slotCount;
+    function handleMessageChange(id) {
+      const booking = booked.find(b => b.id == id);
+      if (booking && isLocked(booking.status)) {
+        alert("🔒 This booking is locked and cannot be modified.");
+        return;
+      }
+
+      const select = document.getElementById(`message-select-${id}`);
+      const input = document.getElementById(`message-${id}`);
+      const statusSelect = document.getElementById(`status-${id}`);
+      const selectedValue = select.value;
+
+      if (selectedValue === "CUSTOM") {
+        input.focus();
+        select.value = "";
+      } else if (selectedValue) {
+        input.value = selectedValue;
+        
+        // Auto-update status based on message selection
+        const messageToStatusMap = {
+          'Your request has been approved. Our team will contact you soon.': 'APPROVED',
+          'Your booking has been accepted. Stay tuned, our crew is on it!': 'ACCEPTED',
+          'Your request has been rejected. Please review and try again.': 'REJECTED',
+          'Your request is pending. Our team will update you shortly.': 'PENDING',
+          'This service is currently unavailable. Please try again later.': 'UNAVAILABLE',
+          'The process is completed. Thank you for your patience!': 'COMPLETED',
+          'A slot has been assigned for your service. Our team will keep you updated.': 'ASSIGNEDSLOT',
+          'Service has started — your vehicle is now being worked on.': 'SERVICE STARTED',
+          'Service is completed! Our team will contact you for the next steps.': 'SERVICE ENDED',
+          'Your vehicle/service has been delivered. Thank you for choosing us!': 'DELIVERED',
+          'Your request is in the queue. Our team will connect with you soon.': 'WAITING'
+        };
+
+        const matchedStatus = messageToStatusMap[selectedValue];
+        if (matchedStatus) {
+          statusSelect.value = matchedStatus;
+          updateStatusDisplay(id, matchedStatus);
+        }
+      }
     }
 
     async function loadBooked() {
@@ -232,11 +291,22 @@
           .join("");
 
         booked.forEach(b => {
+          const locked = isLocked(b.status);
           const hasStaff = b.staff_id;
           const staffName = hasStaff ? getStaffName(b.staff_id) : "";
           const isSlotted = b.slot_id != null && b.slot_id != undefined;
+          const disabledAttr = locked ? 'disabled' : '';
+          const lockedRowClass = locked ? 'locked-row' : '';
 
-          const staffCell = hasStaff
+          // Staff assignment cell
+          const staffCell = locked 
+            ? `
+              <div class="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-500 font-medium">
+                ${hasStaff ? `👤 ${staffName} (ID: ${b.staff_id})` : 'No Assignment'}
+                <span class="ml-2">🔒</span>
+              </div>
+            `
+            : hasStaff
             ? `
               <div id="staff-display-${b.id}" class="flex items-center gap-2">
                 <div class="bg-blue-50 border border-blue-200 rounded-md px-3 py-2 text-sm text-blue-900 font-medium flex-1">
@@ -271,17 +341,42 @@
               </div>
             `;
 
+          // Slot cell
+          const slotCell = locked
+            ? `<div class="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-500 font-medium text-center">
+                ${isSlotted ? '✓ Slotted' : 'N/A'} 🔒
+              </div>`
+            : isSlotted 
+            ? `<div class="bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 px-4 py-2 rounded-lg text-sm font-bold border-2 border-purple-400 shadow-md">
+                ✓ Slotted
+              </div>`
+            : `<button 
+                id="slot-btn-${b.id}"
+                onclick="addToSlot('${b.id}')"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-all shadow hover:shadow-lg">
+                + Add to Slot
+              </button>`;
+
+          // Action button
+          const actionButton = locked
+            ? `<div class="bg-gray-300 text-gray-500 px-3 py-1.5 rounded-md text-sm font-medium cursor-not-allowed" title="This booking is locked">
+                🔒 Locked
+              </div>`
+            : `<button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors" onclick="saveRow('${b.id}')">
+                Save
+              </button>`;
+
           grid.innerHTML += `
-          <tr id="row-${b.id}" class="hover:bg-gray-50 transition-colors">
+          <tr id="row-${b.id}" class="hover:bg-gray-50 transition-colors ${lockedRowClass}">
             <td class="px-4 py-3">
               <span class="font-semibold text-gray-900">${b.car_number}</span>
             </td>
 
             <td class="px-4 py-3">
-              <div id="status-display-${b.id}" onclick="editStatus('${b.id}')" class="cursor-pointer">
-                ${getStatusBadge(b.status || 'PENDING')}
+              <div id="status-display-${b.id}" onclick="${locked ? '' : `editStatus('${b.id}')`}" class="${locked ? '' : 'cursor-pointer'}">
+                ${getStatusBadge(b.status || 'PENDING', locked)}
               </div>
-              <select id="status-${b.id}" class="hidden border-2 border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white w-full" onchange="updateStatusDisplay('${b.id}', this.value)">
+              <select id="status-${b.id}" class="hidden border-2 border-gray-300 rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white w-full" onchange="updateStatusDisplay('${b.id}', this.value)" ${disabledAttr}>
                 <option value="UNAVAILABLE" ${b.status === "UNAVAILABLE" ? "selected" : ""}>UNAVAILABLE</option>
                 <option value="PENDING" ${b.status === "PENDING" ? "selected" : ""}>PENDING</option>
                 <option value="COMPLETED" ${b.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option>
@@ -297,11 +392,29 @@
             </td>
 
             <td class="px-4 py-3">
-              <input id="message-${b.id}" value="${b.message || ''}" class="border border-gray-300 px-3 py-1.5 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <div class="flex flex-col gap-2">
+                <select id="message-select-${b.id}" class="border border-gray-300 px-3 py-1.5 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="handleMessageChange('${b.id}')" ${disabledAttr}>
+                  <option value="">-- Select Message --</option>
+                  <option value="CUSTOM">✍️ Write Custom Message</option>
+                  <option value="Your request has been approved. Our team will contact you soon.">Approved Message</option>
+                  <option value="Your booking has been accepted. Stay tuned, our crew is on it!">Accepted Message</option>
+                  <option value="Your request has been rejected. Please review and try again.">Rejected Message</option>
+                  <option value="Your request is pending. Our team will update you shortly.">Pending Message</option>
+                  <option value="This service is currently unavailable. Please try again later.">Unavailable Message</option>
+                  <option value="The process is completed. Thank you for your patience!">Completed Message</option>
+                  <option value="A slot has been assigned for your service. Our team will keep you updated.">Assigned Slot Message</option>
+                  <option value="Service has started — your vehicle is now being worked on.">Service Started Message</option>
+                  <option value="Service is completed! Our team will contact you for the next steps.">Service Ended Message</option>
+                  <option value="Your vehicle/service has been delivered. Thank you for choosing us!">Delivered Message</option>
+                  <option value="Your request is in the queue. Our team will connect with you soon.">Waiting Message</option>
+                  <option value="Request accepted you can see more details on booked">Accept/Assigned Booking</option>
+                </select>
+                <input id="message-${b.id}" value="${b.message || ''}" placeholder="Type custom message here..." class="border border-gray-300 px-3 py-1.5 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" ${disabledAttr}>
+              </div>
             </td>
             
             <td class="px-4 py-3">
-              <input id="description-${b.id}" value="${b.description}" class="border border-gray-300 px-3 py-1.5 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <input id="description-${b.id}" value="${b.description}" class="border border-gray-300 px-3 py-1.5 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" ${disabledAttr}>
             </td>
 
             <td class="px-4 py-3">
@@ -311,18 +424,18 @@
             <td class="px-4 py-3">${staffCell}</td>
 
             <td class="px-4 py-3">
-              <select id="paystat-${b.id}" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white w-full">
+              <select id="paystat-${b.id}" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white w-full" ${disabledAttr}>
                 <option ${b.payment_status === "paid" ? "selected" : ""}>paid</option>
                 <option ${b.payment_status !== "paid" ? "selected" : ""}>unpaid</option>
               </select>
             </td>
 
             <td class="px-4 py-3">
-              <input type="number" id="amount-${b.id}" class="border border-gray-300 rounded-md px-3 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="${b.payment_amount}">
+              <input type="number" id="amount-${b.id}" class="border border-gray-300 rounded-md px-3 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="${b.payment_amount}" ${disabledAttr}>
             </td>
 
             <td class="px-4 py-3">
-              <select id="mode-${b.id}" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white w-full">
+              <select id="mode-${b.id}" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white w-full" ${disabledAttr}>
                 <option ${b.payment_mode === "cash" ? "selected" : ""}>cash</option>
                 <option ${b.payment_mode === "upi" ? "selected" : ""}>upi</option>
                 <option ${b.payment_mode === "card" ? "selected" : ""}>card</option>
@@ -334,30 +447,17 @@
             </td>
             
             <td class="px-4 py-3">
-              <input type="datetime-local" id="delivery-${b.id}" value="${b.delivery || ""}" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full">
+              <input type="datetime-local" id="delivery-${b.id}" value="${b.delivery || ""}" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full" ${disabledAttr}>
             </td>
   
             <td class="px-4 py-3 text-center">
               <div class="flex flex-col items-center gap-2"> 
-                ${isSlotted ? `
-                  <div class="bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 px-4 py-2 rounded-lg text-sm font-bold border-2 border-purple-400 shadow-md">
-                    ✓ Slotted
-                  </div>
-                ` : `
-                  <button 
-                    id="slot-btn-${b.id}"
-                    onclick="addToSlot('${b.id}')"
-                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-all shadow hover:shadow-lg">
-                    + Add to Slot
-                  </button>
-                `}
+                ${slotCell}
               </div>
             </td>
 
             <td class="px-4 py-3 text-center">
-              <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors" onclick="saveRow('${b.id}')">
-                Save
-              </button>
+              ${actionButton}
             </td>
           </tr>
         `;
@@ -382,6 +482,33 @@
       const booking = booked.find(b => b.id == id);
       if (booking) {
         booking.status = status;
+      }
+
+      // Auto-fill message based on status
+      autoFillMessageByStatus(id, status);
+    }
+
+    function autoFillMessageByStatus(id, status) {
+      const messageInput = document.getElementById(`message-${id}`);
+      const messageSelect = document.getElementById(`message-select-${id}`);
+      
+      const statusMessageMap = {
+        'APPROVED': 'Your request has been approved. Our team will contact you soon.',
+        'ACCEPTED': 'Your booking has been accepted. Stay tuned, our crew is on it!',
+        'REJECTED': 'Your request has been rejected. Please review and try again.',
+        'PENDING': 'Your request is pending. Our team will update you shortly.',
+        'UNAVAILABLE': 'This service is currently unavailable. Please try again later.',
+        'COMPLETED': 'The process is completed. Thank you for your patience!',
+        'ASSIGNEDSLOT': 'A slot has been assigned for your service. Our team will keep you updated.',
+        'SERVICE STARTED': 'Service has started — your vehicle is now being worked on.',
+        'SERVICE ENDED': 'Service is completed! Our team will contact you for the next steps.',
+        'DELIVERED': 'Your vehicle/service has been delivered. Thank you for choosing us!',
+        'WAITING': 'Your request is in the queue. Our team will connect with you soon.'
+      };
+
+      if (statusMessageMap[status]) {
+        messageInput.value = statusMessageMap[status];
+        messageSelect.value = statusMessageMap[status];
       }
     }
 
@@ -430,13 +557,11 @@
     async function addToSlot(id) {
       const booking = booked.find(b => b.id == id);
 
-      // Check if staff assigned
       if (!booking || !booking.staff_id) {
         alert("⚠️ Please assign a staff member before adding to slot!");
         return;
       }
 
-      // Check if already inside a slot
       if (booking.slot_id) {
         alert("ℹ️ This booking is already in a slot!");
         return;
@@ -451,33 +576,23 @@
         const data = await res.json();
         console.log("Slot Response:", data);
 
-        // Error Handling
         if (!res.ok || data.error) {
           const errorMsg = data.error?.message || data.error || 'Unknown error';
 
           if (errorMsg.toLowerCase().includes("slot are full")) {
             alert(`🔒 SLOTS ARE FULL!\nAll ${MAX_SLOTS} slots are currently occupied.`);
-          }
-
-          else if (errorMsg.toLowerCase().includes("already on the slot")) {
+          } else if (errorMsg.toLowerCase().includes("already on the slot")) {
             alert("ℹ️ This booking is already in a slot!");
-          }
-
-          else if (errorMsg.toLowerCase().includes("select the staff")) {
+          } else if (errorMsg.toLowerCase().includes("select the staff")) {
             alert("⚠️ Please assign a staff member before adding to slot!");
-          }
-
-          else {
+          } else {
             alert(`❌ Failed to add to slot: ${errorMsg}`);
           }
 
           return;
         }
 
-        // Success Message
         alert("✅ Added to slot successfully!");
-
-        // Reload updated values
         await getSlotCount();
         await loadBooked();
 
@@ -486,7 +601,6 @@
         alert("❌ Failed to add to slot. Please try again.");
       }
     }
-
 
     async function saveRow(id) {
       const payload = {

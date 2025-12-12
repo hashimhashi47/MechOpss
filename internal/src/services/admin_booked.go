@@ -101,12 +101,15 @@ func (s *AdminService) ServiceUpadteBooked(id string, Input models.Bookeds) (int
 	if Input.PaymentMode != "" {
 		Booked.PaymentMode = Input.PaymentMode
 	}
+
 	if Input.ServiceStart != "" {
 		Booked.ServiceStart = Input.ServiceStart
 	}
+
 	if Input.ServiceEnd != "" {
 		Booked.ServiceEnd = Input.ServiceEnd
 	}
+
 	if Input.Delivery != "" {
 		Booked.Delivery = Input.Delivery
 	}
@@ -120,7 +123,7 @@ func (s *AdminService) ServiceUpadteBooked(id string, Input models.Bookeds) (int
 
 // add slot from booked to slots
 func (s *AdminService) ServiceAddSlot(id string) (interface{}, error) {
-	
+
 	var Bookeds models.Bookeds
 	if err := s.Repo.FindWithTwoPreload(&Bookeds, constants.PRELOADSTAFF, constants.PRELOADSLOT, id); err != nil {
 		return models.Slot{}, errors.New("failed to find bookeds")
@@ -141,7 +144,7 @@ func (s *AdminService) ServiceAddSlot(id string) (interface{}, error) {
 	}
 	//loop all the slot and check is empty or not
 	for i := range slots {
-		if slots[i].Status == "EMPTY" {
+		if slots[i].Status == "empty" {
 			Slot = &slots[i]
 			break
 		}

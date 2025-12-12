@@ -38,6 +38,7 @@ func (ac *AdminController) CountOfSlot(c *gin.Context) {
 func (s *AdminController) EditSlot(c *gin.Context) {
 	id := c.Param("id")
 
+	
 	var input models.Slot
 
 	if err := c.ShouldBindJSON(&input); err != nil {

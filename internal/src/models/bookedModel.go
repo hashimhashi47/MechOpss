@@ -13,7 +13,7 @@ type Bookeds struct {
 	Description   string  `json:"description"`
 	Message       string  `json:"message"`
 
-	UserID    uint   `json:"user_id"`
+	UserID    *uint  `json:"user_id"`
 	StaffID   *uint  `json:"staff_id"`
 	CarNumber string `json:"car_number"`
 	Status    string `json:"status"`
@@ -22,6 +22,7 @@ type Bookeds struct {
 
 	SlotID *uint `json:"slot_id"`
 
-	Slot  Slot  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Staff Staff `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Slot  Slot   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Staff *Staff `gorm:"constraint:OnDelete:SET NULL;"`
+	User  *User  `gorm:"constraint:OnDelete:SET NULL;"`
 }

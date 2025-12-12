@@ -26,8 +26,6 @@ func (s *AdminService) ServiceGetAllBooking() ([]models.Booking, error) {
 	return visibleBookings, nil
 }
 
-
-
 // approve the bookings
 func (c *AdminService) ServiceApproveBooking(id string) (models.Bookeds, error) {
 	var existingbooking models.Booking
@@ -37,7 +35,7 @@ func (c *AdminService) ServiceApproveBooking(id string) (models.Bookeds, error) 
 
 	booked := models.Bookeds{
 		ID:          existingbooking.ID,
-		UserID:      existingbooking.UserID,
+		UserID:      &existingbooking.UserID,
 		CarNumber:   existingbooking.CarNumber,
 		Description: existingbooking.Problem,
 		Address:     existingbooking.Address,
@@ -83,7 +81,7 @@ func (c *AdminService) ServiceAssignBooking(bookingID string, staffIDstr string)
 	}
 	//loop all the slot and check is empty or not
 	for i := range slots {
-		if slots[i].Status == "EMPTY" {
+		if slots[i].Status == "empty" {
 			Slot = &slots[i]
 			break
 		}
@@ -105,7 +103,7 @@ func (c *AdminService) ServiceAssignBooking(bookingID string, staffIDstr string)
 	booked := models.Bookeds{
 		ID:          existingbooking.ID,
 		CarModel:    existingbooking.CarModel,
-		UserID:      existingbooking.UserID,
+		UserID:      &existingbooking.UserID,
 		CarNumber:   existingbooking.CarNumber,
 		Description: existingbooking.Problem,
 		Address:     existingbooking.Address,
@@ -120,8 +118,17 @@ func (c *AdminService) ServiceAssignBooking(bookingID string, staffIDstr string)
 		return models.Bookeds{}, errors.New("booking failed")
 	}
 
+	// Load staff data so StaffName works
+	var bookedWithStaff models.Bookeds
+	if err := c.Repo.FindWithPreload(&bookedWithStaff, "Staff", booked.ID); err != nil {
+		return nil, errors.New("failed to load staff")
+	}
 	//adding staff name after the boookeds add
-	Slot.StaffName = booked.Staff.FirstName
+	if bookedWithStaff.Staff != nil {
+		Slot.StaffName = bookedWithStaff.Staff.FirstName
+	} else {
+		Slot.StaffName = "Unassigned"
+	}
 
 	if err := c.Repo.Save(&Slot); err != nil {
 		return nil, errors.New("failed to update slot")

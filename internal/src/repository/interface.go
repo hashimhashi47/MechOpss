@@ -6,6 +6,7 @@ type Repository interface {
 	Insert(model interface{}) error
 	FindByEmail(model interface{}, email string) error
 	FindByID(model interface{}, id string) error
+	FindBy(model interface{}, id string, find string) error
 	FindAll(models interface{}) error
 	Save(model interface{}) error
 	UpdateRefreshToken(model, userID interface{}, token string) error

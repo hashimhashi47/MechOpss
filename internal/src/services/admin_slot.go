@@ -78,7 +78,7 @@ func (s *AdminService) ServiceEmptySlot(id string) (interface{}, error) {
 	slot.Description = ""
 	slot.StaffID = nil
 	slot.StaffName = ""
-	slot.Status = "EMPTY"
+	slot.Status = "empty"
 
 	if err := s.Repo.Save(&slot); err != nil {
 		return nil, errors.New("unable to remove the slot")

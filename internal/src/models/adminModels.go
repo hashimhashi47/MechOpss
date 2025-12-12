@@ -11,3 +11,5 @@ type Admin struct {
 	RefreshToken string `json:"-" gorm:"type:text"`
 	Password     string `json:"password"`
 }
+
+

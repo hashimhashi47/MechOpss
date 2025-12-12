@@ -3,6 +3,8 @@ package routes
 import (
 	"MechOpss/infra/db"
 	"MechOpss/internal/src/controllers"
+	"MechOpss/internal/src/middleware"
+
 	// "MechOpss/internal/src/middleware"
 	"MechOpss/internal/src/repository"
 
@@ -27,7 +29,7 @@ func AdminRoute(r *gin.Engine) {
 	r.POST("admin/login", adminController.AdminLoginHandler)
 
 	Admin := r.Group("/admin")
-	// Admin.Use(middleware.AdminAuth())
+	Admin.Use(middleware.AdminAuth())
 	{
 		// Pages
 		Admin.GET("/logout", adminController.AdminLogout)

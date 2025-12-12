@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MechOpss/internal/src/dto"
 	"MechOpss/internal/src/models"
 	"MechOpss/internal/src/repository"
 	"MechOpss/internal/src/utils"
@@ -70,10 +71,7 @@ func (r *UserService) Login(data *models.User) (interface{}, uint, string, error
 	return resp, user.ID, access, nil
 }
 
-func (s *UserService) ServiceUpdateuser() {
-
-}
-
+// logout for admin,user,staff
 func (s *UserService) Logout(userID interface{}) error {
 
 	err := s.repo.UpdateRefreshToken(models.User{}, userID, "")
@@ -81,4 +79,136 @@ func (s *UserService) Logout(userID interface{}) error {
 		return errors.New("failed to clear refresh token")
 	}
 	return nil
+}
+
+// user booking
+func (c *UserService) ServiceBookingUser(data models.Booking) (string, error) {
+	ID := utils.RandomIDGenerate("BOOK")
+	data.ID = ID
+
+	if err := c.repo.Insert(&data); err != nil {
+		return "", errors.New("booking failed")
+	}
+	return ID, nil
+}
+
+// get the whole booking status of that user
+func (s *UserService) ServiceGetBookingstatus(id string) (Details interface{}, err error) {
+	var user models.User
+
+	if err := s.repo.FindWithPreload(&user, "Bookings", id); err != nil {
+		return nil, errors.New("failed to find the user")
+	}
+
+	var detail []dto.UserBooking
+	for _, v := range user.Bookings {
+		detail = append(detail, dto.UserBooking{
+			ID:         v.ID,
+			CarModel:   v.CarModel,
+			CarNumber:  v.CarNumber,
+			UserStatus: v.UserStatus,
+			Message:    v.Message,
+		})
+	}
+
+	return detail, nil
+}
+
+// get the whole booking status of that user
+func (s *UserService) ServiceGetBookingstatusID(Userid, BookingID string) (interface{}, error) {
+	var user models.User
+
+	if err := s.repo.FindWithPreload(&user, "Bookings", Userid); err != nil {
+		return nil, errors.New("failed to find the user")
+	}
+
+	var BookingDetails dto.UserBooking
+	found := false
+	for _, v := range user.Bookings {
+		if v.ID == BookingID {
+			BookingDetails.ID = v.ID
+			BookingDetails.CarModel = v.CarModel
+			BookingDetails.CarNumber = v.CarModel
+			BookingDetails.UserStatus = v.UserStatus
+			BookingDetails.Message = v.Message
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, errors.New("booked id does not belong to this user")
+	}
+
+	return BookingDetails, nil
+}
+
+
+// get user bookedds
+func (s *UserService) ServiceGetBookeds(id string) ([]dto.UserBookeds, error) {
+	var user models.User
+	if err := s.repo.FindWithPreload(&user, "Booked", id); err != nil {
+		return nil, errors.New("failed to find the user")
+	}
+
+	var bookedsDetails []dto.UserBookeds
+
+	for _, v := range user.Booked {
+		bookedsDetails = append(bookedsDetails, dto.UserBookeds{
+			ID:            v.ID,
+			Date:          v.Date,
+			CarModel:      v.CarModel,
+			CarNumber:     v.CarNumber,
+			UserID:        *v.UserID,
+			Status:        v.Status,
+			Message:       v.Message,
+			ServiceStart:  v.ServiceStart,
+			ServiceEnd:    v.ServiceEnd,
+			Description:   v.Description,
+			PaymentAmount: v.PaymentAmount,
+			PaymentMode:   v.PaymentMode,
+			PaymentStatus: v.PaymentStatus,
+			Delivery:      v.Delivery,
+		})
+	}
+	return bookedsDetails, nil
+}
+
+
+// get bookeds by id
+func (s *UserService) ServiceGetBookedsID(Userid, BookingID string) (interface{}, error) {
+	var user models.User
+	if err := s.repo.FindWithPreload(&user, "Booked", Userid); err != nil {
+		return nil, errors.New("failed to find the user")
+	}
+
+	if len(user.Booked) == 0 {
+		return nil, errors.New("no bookings found for this user")
+	}
+
+	var bookedsDetails dto.UserBookeds
+
+	found := false
+	for _, v := range user.Booked {
+		if v.ID == BookingID {
+			bookedsDetails.Date = v.Date
+			bookedsDetails.CarModel = v.CarModel
+			bookedsDetails.CarNumber = v.CarNumber
+			bookedsDetails.UserID = *v.UserID
+			bookedsDetails.Status = v.Status
+			bookedsDetails.Message = v.Message
+			bookedsDetails.ServiceStart = v.ServiceStart
+			bookedsDetails.ServiceEnd = v.ServiceEnd
+			bookedsDetails.Description = v.Description
+			bookedsDetails.PaymentAmount = v.PaymentAmount
+			bookedsDetails.PaymentMode = v.PaymentMode
+			bookedsDetails.PaymentStatus = v.PaymentStatus
+			bookedsDetails.Delivery = v.Delivery
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, errors.New("booked id does not belong to this user")
+	}
+	return bookedsDetails, nil
 }

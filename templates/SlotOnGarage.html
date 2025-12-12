@@ -348,7 +348,7 @@
       if (!slot) return;
 
       // Don't open edit form for empty slots
-      if (slot.status === "EMPTY") return;
+      if (slot.status === "empty") return;
 
       document.getElementById("slotId").value = slot.ID;
       document.getElementById("status").value = slot.status || "empty";
@@ -395,11 +395,14 @@
     }
 
     async function performSaveSlot(id, status) {
+      // If status is COMPLETED, change it to "empty" before saving
+      const finalStatus = (status === 'COMPLETED') ? 'empty' : status;
+
       const body = {
         service_start: document.getElementById("start").value,
         service_end: document.getElementById("end").value,
         description: document.getElementById("desc").value,
-        status: status
+        status: finalStatus
       };
 
       try {
@@ -413,40 +416,13 @@
           throw new Error("Server returned error");
         }
 
-        // If status is COMPLETED, delete the slot to clear it
-        if (status === 'COMPLETED') {
-          await deleteCompletedSlot(id);
-        } else {
-          showToast("Slot updated successfully");
-          toggleForm();
-          await loadSlots();
-        }
-
-      } catch (err) {
-        console.error("Error saving slot:", err);
-        showToast("Failed to update slot", "error");
-      }
-    }
-
-    async function deleteCompletedSlot(id) {
-      try {
-        const res = await fetch(`/admin/slot/empty/${id}`, {
-          method: "GET"
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to delete slot");
-        }
-
         showToast("Slot completed and cleared successfully");
         toggleForm();
         await loadSlots();
 
       } catch (err) {
-        console.error("Error deleting slot:", err);
-        showToast("Slot updated but failed to clear", "warning");
-        toggleForm();
-        await loadSlots();
+        console.error("Error saving slot:", err);
+        showToast("Failed to update slot", "error");
       }
     }
 
