@@ -97,7 +97,7 @@ func (r *SQLrepo) FindWithTwoPreload(model interface{}, first, second, id string
 // find by id with one preload
 func (r *SQLrepo) FindWithPreload(model interface{}, Preload, id string) error {
 	return r.DB.Preload(Preload).Where("id = ?", id).First(model).Error
-}
+}	
 
 // get all booking with staff
 func (r *SQLrepo) FindAllBookingsWithStaff(model interface{}) error {

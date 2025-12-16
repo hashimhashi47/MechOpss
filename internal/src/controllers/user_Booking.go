@@ -4,12 +4,13 @@ import (
 	"MechOpss/internal/src/models"
 	"MechOpss/internal/src/utils"
 	"MechOpss/internal/src/utils/constants"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-//booking the service by user
+// booking the service by user
 func (s *UserController) UserBooking(c *gin.Context) {
 
 	UserID := c.MustGet("id").(uint)
@@ -25,7 +26,7 @@ func (s *UserController) UserBooking(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&Input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"Error": utils.ErrorMessage(constants.BADREQUEST, err)})
 		return
 	}
 
@@ -48,4 +49,42 @@ func (s *UserController) UserBooking(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"Sucess": "Our Team will contact soon", "ID": utils.SuccessResponse(BookingId)})
+}
+
+func (uc *UserController) GetPayments(c *gin.Context) {
+	id, _ := c.Get("id")
+	UserID := fmt.Sprintf("%v", id)
+
+	data, err := uc.Service.ServiceGetPayments(UserID)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": utils.ErrorMessage(constants.BADREQUEST, err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"Sucess": "your payment details", "payments": utils.SuccessResponse(data)})
+}
+
+
+// pay the service
+func (uc *UserController) PayTheService(c *gin.Context) {
+	BID := c.Param("id")
+	id, _ := c.Get("id")
+	UserID := fmt.Sprintf("%v", id)
+
+	var input struct {
+		Amount float64 `json:"amount"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": utils.ErrorMessage(constants.BADREQUEST, err)})
+	}
+
+	data, err := uc.Service.ServicePayTheService(BID, UserID, input.Amount)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": utils.ErrorMessage(constants.BADREQUEST, err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"Sucess": utils.SuccessResponseMsg(data, "amount recived successfully")})
 }

@@ -142,7 +142,6 @@ func (s *UserService) ServiceGetBookingstatusID(Userid, BookingID string) (inter
 	return BookingDetails, nil
 }
 
-
 // get user bookedds
 func (s *UserService) ServiceGetBookeds(id string) ([]dto.UserBookeds, error) {
 	var user models.User
@@ -172,7 +171,6 @@ func (s *UserService) ServiceGetBookeds(id string) ([]dto.UserBookeds, error) {
 	}
 	return bookedsDetails, nil
 }
-
 
 // get bookeds by id
 func (s *UserService) ServiceGetBookedsID(Userid, BookingID string) (interface{}, error) {
@@ -211,4 +209,70 @@ func (s *UserService) ServiceGetBookedsID(Userid, BookingID string) (interface{}
 		return nil, errors.New("booked id does not belong to this user")
 	}
 	return bookedsDetails, nil
+}
+
+// user payments can show
+func (s *UserService) ServiceGetPayments(id string) (data []dto.Userpayments, errr error) {
+	var user models.User
+
+	if err := s.repo.FindWithPreload(&user, "Booked", id); err != nil {
+		return nil, errors.New("failed to find user")
+	}
+
+	var payments []dto.Userpayments
+	for _, v := range user.Booked {
+		payments = append(payments, dto.Userpayments{
+			ID:            v.ID,
+			PaymentStatus: v.PaymentStatus,
+			PaymentAmount: v.PaymentAmount,
+			PaymentMode:   v.PaymentMode,
+		})
+	}
+
+	return payments, nil
+}
+
+// pay the service
+func (s *UserService) ServicePayTheService(BookedID, Userid string, amount float64) (interface{}, error) {
+	var bookeds models.Bookeds
+	var user models.User
+
+	if err := s.repo.FindWithPreload(&user,"Booked" ,Userid); err != nil {
+		return nil, errors.New("failed to find the user")
+	}
+	found := false
+	for _, v := range user.Booked {
+		if v.ID == BookedID {
+			found = true
+			if err := s.repo.FindByID(&bookeds, BookedID); err != nil {
+				return nil, errors.New("failed to find booking")
+			}
+			break
+		}
+	}
+
+	if !found {
+		return nil, errors.New("booking not linked to user")
+	}
+
+	if amount != bookeds.PaymentAmount {
+		return nil, errors.New("amount mismatched")
+	}
+
+	bookeds.PaymentMode = "upi"
+	bookeds.PaymentAmount = amount
+	bookeds.PaymentStatus = "paid"
+
+	if err := s.repo.Save(&bookeds); err != nil {
+		return nil, errors.New("failed to save payment")
+	}
+
+	payment := dto.Userpayments{
+		ID:            bookeds.ID,
+		PaymentStatus: bookeds.PaymentStatus,
+		PaymentAmount: bookeds.PaymentAmount,
+		PaymentMode:   bookeds.PaymentMode,
+	}
+
+	return payment, nil
 }

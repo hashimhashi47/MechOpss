@@ -20,8 +20,7 @@ type UserBooking struct {
 	Message    string `json:"message"`
 }
 
-
-type UserBookeds struct{
+type UserBookeds struct {
 	ID            string  `json:"id" gorm:"primaryKey;type:varchar(50)"`
 	CarModel      string  `json:"car"`
 	ServiceStart  string  `json:"service_start"`
@@ -37,4 +36,11 @@ type UserBookeds struct{
 	CarNumber string `json:"car_number"`
 	Status    string `json:"status"`
 	Date      string `json:"date"`
+}
+
+type Userpayments struct {
+	ID            string  `json:"id" gorm:"primaryKey;type:varchar(50)"`
+	PaymentStatus string  `json:"payment_status"`
+	PaymentAmount float64 `json:"payment_amount"`
+	PaymentMode   string  `json:"payment_mode"`
 }

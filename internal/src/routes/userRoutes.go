@@ -32,6 +32,8 @@ func UserRoutes(e *gin.Engine, userController *controllers.UserController) {
 		User.GET("/bookingstatus/:id", userController.GetBookingstatusID)
 		User.GET("/getbookedstatus", userController.GetBookedsStatus)
 		User.GET("/bookedstatus/:id", userController.GetBookedstatusID)
+		User.GET("/getpayments", userController.GetPayments)
+		User.POST("/paytheservice/:id", userController.PayTheService)
 	}
 
 }
